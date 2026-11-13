@@ -1,1 +1,6 @@
-
+pandas
+scikit-learn
+matplotlib
+joblib
+pytest
+pytest-cov
