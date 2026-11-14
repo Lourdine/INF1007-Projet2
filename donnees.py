@@ -10,14 +10,15 @@ from exceptions import (
     ValeurHorsIntervalleError,  # Levée si une valeur est hors de la plage autorisée
 )
 
-# Colonnes retenues pour le projet : 13 variables d'entrée + OUTCOME (cible).
-# Exclusions volontaires : ID (inutile), RACE (sensible), INCOME, CHILDREN, EDUCATION.
+# Colonnes retenues pour le projet : 12 variables d'entrée + OUTCOME (cible).
+# Exclusions volontaires : ID (inutile), RACE (sensible), INCOME, CHILDREN, EDUCATION, POSTAL_CODE.
+# POSTAL_CODE exclu : variable géographique arbitraire, non pertinente pour prédire une réclamation.
 # OUTCOME = 0 (pas de réclamation) ou 1 (réclamation) — c'est ce qu'on veut prédire.
 COLONNES_REQUISES = [
     "AGE", "GENDER", "DRIVING_EXPERIENCE", "CREDIT_SCORE",
-    "VEHICLE_YEAR", "MARRIED", "POSTAL_CODE", "ANNUAL_MILEAGE",
+    "VEHICLE_YEAR", "MARRIED", "VEHICLE_OWNERSHIP", "ANNUAL_MILEAGE",
     "SPEEDING_VIOLATIONS", "PAST_ACCIDENTS", "DUIS",
-    "VEHICLE_OWNERSHIP", "VEHICLE_TYPE", "OUTCOME"
+    "VEHICLE_TYPE", "OUTCOME"
 ]
 
 
@@ -38,7 +39,7 @@ def charger_donnees(chemin: str) -> pd.DataFrame:
         if col not in df.columns:
             raise ColonneManquanteError(col)
 
-    return df[COLONNES_REQUISES]  # On garde seulement les 14 colonnes choisies
+    return df[COLONNES_REQUISES]  # On garde seulement les 13 colonnes choisies
 
 
 def nettoyer_donnees(df: pd.DataFrame) -> pd.DataFrame:
@@ -66,7 +67,7 @@ def nettoyer_donnees(df: pd.DataFrame) -> pd.DataFrame:
 def obtenir_features_cible(df: pd.DataFrame):
     """
     Sépare le DataFrame en X (variables d'entrée) et y (cible) — séparation standard en ML.
-    X = ce qu'on donne au modèle pour apprendre (13 variables).
+    X = ce qu'on donne au modèle pour apprendre (12 variables).
     y = ce qu'on veut qu'il prédise (OUTCOME : 0 ou 1).
     """
     X = df.drop(columns=["OUTCOME"])  # Toutes les colonnes sauf OUTCOME
