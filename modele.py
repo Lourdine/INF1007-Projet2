@@ -44,6 +44,11 @@ class Modele:
         predictions = self._modele.predict(X_test)  # Teste sur les 20% mis de côté
         accuracy = accuracy_score(y_test, predictions)  # % de bonnes prédictions
 
+        # Ch. 12 — Calcul vectorisé avec NumPy (sans boucle)
+        # np.array convertit les listes en tableaux, == compare élément par élément, .mean() calcule la moyenne
+        accuracy_numpy = np.mean(np.array(predictions) == np.array(y_test))  # Même résultat qu'accuracy_score, calculé manuellement
+        print(f"Vérification NumPy   — précision : {accuracy_numpy:.2%}")    # Doit afficher le même % qu'accuracy_score
+
         # Modèle trivial — prédit toujours la classe majoritaire (point de comparaison)
         
         classe_majoritaire = np.bincount(y_test).argmax()
