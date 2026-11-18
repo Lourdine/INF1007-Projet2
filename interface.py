@@ -1,5 +1,5 @@
 """
-interface.py — Interface graphique Tkinter pour INF1007 Projet 2.
+interface.py – Interface graphique Tkinter pour INF1007 Projet 2.
 Sujet : Prédiction de réclamation d'assurance auto (classification binaire).
 """
 
@@ -25,16 +25,16 @@ CHEMIN_HISTORIQUE = "historique.csv"                   # Fichier où on sauvegar
 NAVY        = "#0f172a"                                # Fond principal très foncé (arrière-plan fenêtre)
 NAVY_PANEL  = "#1e293b"                                # Fond des panneaux (légèrement plus clair)
 NAVY_BORDER = "#334155"                                # Couleur des bordures et séparateurs
-BLEU        = "#3b82f6"                                # Bleu vif — bouton Prédire et barres du graphique
+BLEU        = "#3b82f6"                                # Bleu vif – bouton Prédire et barres du graphique
 BLEU_HOVER  = "#2563eb"                                # Bleu plus foncé quand on survole le bouton
-BLEU_2      = "#1e3a5f"                                # Bleu sombre — bouton Voir historique
+BLEU_2      = "#1e3a5f"                                # Bleu sombre – bouton Voir historique
 TEXTE       = "#e2e8f0"                                # Texte principal (blanc cassé, lisible sur fond sombre)
 TEXTE_MUT   = "#94a3b8"                                # Texte secondaire (gris, pour labels et placeholders)
 VERT        = "#10b981"                                # Couleur résultat : pas de réclamation
 ROUGE       = "#ef4444"                                # Couleur résultat : réclamation probable
 JAUNE       = "#f59e0b"                                # Couleur avertissement dans le header
 
-# ── Options des menus déroulants ──────────────────────────────────────────────
+# ── Options des menus déroulants ───────────────────────────────────────────────
 # Ces listes définissent les valeurs possibles pour les variables catégorielles
 # Elles correspondent aux valeurs réelles du dataset Car_Insurance_Claim.csv
 OPTIONS_AGE          = ["16-25", "26-39", "40-64", "65+"]
@@ -43,12 +43,12 @@ OPTIONS_DRIVING      = ["0-9y", "10-19y", "20-29y", "30y+"]
 OPTIONS_VEHICLE_YEAR = ["before 2015", "after 2015"]
 OPTIONS_MARRIED      = ["0", "1"]                      # 0 = non marié, 1 = marié
 OPTIONS_VEHICLE_TYPE = ["sedan", "sports car"]
-OPTIONS_OWNERSHIP    = ["0", "1"]   
+OPTIONS_OWNERSHIP    = ["0", "1"]
 
 
 class Interface:
     """
-    Classe principale de l'interface graphique — thème Navy professionnel.
+    Classe principale de l'interface graphique – thème Navy professionnel.
 
     Responsabilités :
     - Entraîner le modèle au démarrage (via donnees.py + modele.py)
@@ -63,6 +63,7 @@ class Interface:
         self.root.title("Prédiction de réclamation d'assurance auto")
         self.root.state("zoomed")                      # Fenêtre maximisée au lancement (Windows)
         self.root.configure(bg=NAVY)                   # Fond noir marine pour toute la fenêtre
+        self._canvas_graphique = None                  # Référence au canvas matplotlib actuel
         self._modele = Modele()                        # Crée un objet Modele (pas encore entraîné)
         self._entrainer_modele()                       # Charge les données et entraîne le modèle
         self._appliquer_style_ttk()                    # Configure le style sombre des menus déroulants
@@ -73,13 +74,14 @@ class Interface:
     def _entrainer_modele(self):
         """
         Orchestre le chargement, nettoyage et entraînement.
-        Appelée une seule fois au démarrage — utilise donnees.py et modele.py.
+        Appelée une seule fois au démarrage – utilise donnees.py et modele.py.
         """
         df = charger_donnees(CHEMIN_CSV)               # Charge le CSV → DataFrame pandas
         df = nettoyer_donnees(df)                      # Supprime les lignes vides, valide CREDIT_SCORE
         X, y = obtenir_features_cible(df)              # X = 12 variables d'entrée, y = OUTCOME (0 ou 1)
         precision = self._modele.entrainer(X, y)       # RandomForest apprend le lien entre X et y (split 80/20)
-        self._modele.sauvegarder(CHEMIN_MODELE)        # Sauvegarde le modèle sur disque (.pkl) pour ne pas réentraîner
+        self._modele.sauvegarder(CHEMIN_MODELE)        # Sauvegarde le modèle sur disque (.pkl)
+        self._modele.sauvegarder_metadonnees(X, precision, "modeles/metadonnees.json")  # Sauvegarde les métadonnées du modèle en JSON
         print(f"Modèle entraîné — précision : {precision:.2%}")  # Affiche ex: "précision : 85.00%"
 
     # ── Style ttk ─────────────────────────────────────────────────────────────
@@ -87,7 +89,7 @@ class Interface:
     def _appliquer_style_ttk(self):
         """
         Applique un style sombre aux widgets ttk (Combobox = menu déroulant).
-        Par défaut, les Combobox sont blancs — on les force à suivre notre thème navy.
+        Par défaut, les Combobox sont blancs – on les force à suivre notre thème navy.
         """
         style = ttk.Style()
         style.theme_use("default")                     # Thème de base sur lequel on applique nos couleurs
@@ -309,13 +311,11 @@ class Interface:
             "SPEEDING_VIOLATIONS": "ex: 1",
             "PAST_ACCIDENTS":      "ex: 0",
             "DUIS":                "ex: 0",
-          
         }
         valeurs = {}
         champs_numeriques = [                          # Ces variables doivent être des nombres
             "CREDIT_SCORE", "ANNUAL_MILEAGE",
             "SPEEDING_VIOLATIONS", "PAST_ACCIDENTS", "DUIS"
-            # POSTAL_CODE retiré : accepte lettres et chiffres (ex: H3S1W7)
         ]
 
         for nom, champ in self._champs.items():        # Parcourt les 12 variables
@@ -331,7 +331,7 @@ class Interface:
                 except ValueError:
                     raise DonneeInvalideError(f"'{nom}' doit être un nombre, pas '{valeur}'.")
             else:
-                valeurs[nom] = valeur                  # Valeur texte pour les menus et POSTAL_CODE
+                valeurs[nom] = valeur                  # Valeur texte pour les menus
 
         return valeurs
 
@@ -350,7 +350,7 @@ class Interface:
                 "VEHICLE_YEAR", "MARRIED", "VEHICLE_OWNERSHIP", "ANNUAL_MILEAGE",
                 "SPEEDING_VIOLATIONS", "PAST_ACCIDENTS", "DUIS", "VEHICLE_TYPE"
             ]
-            X = pd.DataFrame([valeurs])[ORDRE_COLONNES]  # Réordonne les colonnes avant la prédiction               # Crée un DataFrame d'une seule ligne (1 client)
+            X = pd.DataFrame([valeurs])[ORDRE_COLONNES]  # Réordonne les colonnes avant la prédiction
             prediction = self._modele.predire(X)[0]   # Le modèle retourne [0] ou [1] → on prend le premier
 
             if prediction == 1:                        # 1 = réclamation probable
@@ -376,17 +376,15 @@ class Interface:
     def _afficher_graphique(self):
         """
         Affiche un graphique matplotlib de l'importance des variables.
-        Appelée après chaque prédiction — vide d'abord l'ancien graphique.
+        Appelée après chaque prédiction – remplace l'ancien canvas par le nouveau.
         """
-        # Vide tous les widgets de la colonne droite sauf le label résultat
-        for widget in self._colonne_droite.winfo_children():
-            if widget is self._label_resultat:
-                continue                               # On garde le label résultat
-            widget.destroy()                           # On détruit tout le reste
+        # Détruit seulement l'ancien canvas s'il existe (pas le titre ni le label résultat)
+        if self._canvas_graphique is not None:
+            self._canvas_graphique.get_tk_widget().destroy()
+            self._canvas_graphique = None
 
-        df = charger_donnees(CHEMIN_CSV)
-        colonnes = [c for c in df.columns if c != "OUTCOME"]   # Noms des 12 variables d'entrée
-        importances = self._modele._modele.feature_importances_ # Tableau calculé par RandomForest
+        colonnes = ["AGE", "GENDER", "DRIVING_EXPERIENCE", "CREDIT_SCORE", "VEHICLE_YEAR", "MARRIED", "VEHICLE_OWNERSHIP", "ANNUAL_MILEAGE", "SPEEDING_VIOLATIONS", "PAST_ACCIDENTS", "DUIS", "VEHICLE_TYPE"]  # Noms des 12 variables d'entrée (fixes)
+        importances = self._modele._modele.feature_importances_  # Tableau calculé par RandomForest
 
         # Création du graphique avec le thème navy
         fig, ax = plt.subplots(figsize=(5, 4.5))
@@ -402,10 +400,10 @@ class Interface:
         ax.set_xlabel("Importance (RandomForest)", fontsize=8, color=TEXTE_MUT)
         fig.tight_layout(pad=1.5)
 
-        # Intègre le graphique matplotlib dans Tkinter
-        canvas = FigureCanvasTkAgg(fig, master=self._colonne_droite)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        # Intègre le graphique matplotlib dans Tkinter et garde la référence
+        self._canvas_graphique = FigureCanvasTkAgg(fig, master=self._colonne_droite)
+        self._canvas_graphique.draw()
+        self._canvas_graphique.get_tk_widget().pack(fill="both", expand=True, padx=12, pady=(0, 12))
         plt.close(fig)                                 # Libère la mémoire
 
     # ── Historique ────────────────────────────────────────────────────────────

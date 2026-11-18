@@ -11,7 +11,9 @@ from sklearn.model_selection import train_test_split  # Sépare les données 80%
 from sklearn.metrics import accuracy_score  # Calcule le % de bonnes prédictions
 from sklearn.preprocessing import LabelEncoder  # Convertit le texte en chiffres (male→0, female→1)
 from exceptions import ModeleNonEntraineError
-
+import json  # Pour sauvegarder les métadonnées du modèle en JSON
+import numpy as np 
+import os
 
 class Modele:
     """Encapsule le modèle ML : entraînement, prédiction, sauvegarde."""
@@ -43,7 +45,7 @@ class Modele:
         accuracy = accuracy_score(y_test, predictions)  # % de bonnes prédictions
 
         # Modèle trivial — prédit toujours la classe majoritaire (point de comparaison)
-        import numpy as np
+        
         classe_majoritaire = np.bincount(y_test).argmax()
         predictions_triviales = [classe_majoritaire] * len(y_test)
         accuracy_trivial = accuracy_score(y_test, predictions_triviales)
@@ -63,7 +65,34 @@ class Modele:
     def sauvegarder(self, chemin: str) -> None:
         """Sauvegarde le modèle dans un fichier pour ne pas réentraîner à chaque fois."""
         joblib.dump(self._modele, chemin)  # Écrit le modèle sur disque
+    
+    def sauvegarder_metadonnees(self, X: pd.DataFrame, precision: float, chemin: str) -> None:
+        """Sauvegarde les métadonnées du modèle dans un fichier JSON.
+        Contient : noms des colonnes, valeurs catégorielles, intervalles numériques, précision."""
+    
+        colonnes_categories = X.select_dtypes(include="object").columns.tolist()
+        colonnes_numeriques = X.select_dtypes(exclude="object").columns.tolist()
 
+        metadonnees = {
+            "colonnes": X.columns.tolist(),           # Ordre exact des colonnes
+            "metrique": "accuracy",
+            "precision": round(precision, 4),
+            "categories": {
+                col: sorted(X[col].unique().tolist()) # Valeurs possibles pour chaque catégorie
+                for col in colonnes_categories
+            },
+            "numeriques": {
+                col: {
+                    "min": round(float(X[col].min()), 4),
+                    "max": round(float(X[col].max()), 4)
+                }
+                for col in colonnes_numeriques
+            }
+        }
+
+        os.makedirs(os.path.dirname(chemin), exist_ok=True)  # Crée le dossier modeles/ si absent
+        with open(chemin, "w", encoding="utf-8") as f:
+            json.dump(metadonnees, f, indent=4, ensure_ascii=False)
     def charger(self, chemin: str) -> None:
         """Recharge un modèle sauvegardé depuis un fichier."""
         self._modele = joblib.load(chemin)  # Remet le modèle en mémoire
