@@ -351,15 +351,16 @@ class Interface:
                 "SPEEDING_VIOLATIONS", "PAST_ACCIDENTS", "DUIS", "VEHICLE_TYPE"
             ]
             X = pd.DataFrame([valeurs])[ORDRE_COLONNES]  # Réordonne les colonnes avant la prédiction
-            prediction = self._modele.predire(X)[0]   # Le modèle retourne [0] ou [1] → on prend le premier
+            prediction = self._modele.predire(X)[0]            # 0 ou 1
+            confiance  = self._modele.predire_probabilite(X)   # % de probabilité de réclamation
 
-            if prediction == 1:                        # 1 = réclamation probable
+            if prediction == 1:                                # 1 = réclamation probable
                 msg      = "⚠  Réclamation probable"
-                sous_msg = "Ce profil présente un risque élevé de réclamation."
+                sous_msg = f"Ce profil présente un risque élevé de réclamation.\nProbabilité : {confiance}%"
                 couleur  = ROUGE
-            else:                                      # 0 = pas de réclamation probable
+            else:                                              # 0 = pas de réclamation probable
                 msg      = "✓  Pas de réclamation"
-                sous_msg = "Ce profil présente un faible risque de réclamation."
+                sous_msg = f"Ce profil présente un faible risque de réclamation.\nProbabilité de réclamation : {confiance}%"
                 couleur  = VERT
 
             self._label_resultat.config(text=f"{msg}\n{sous_msg}", fg=couleur)

@@ -61,7 +61,14 @@ class Modele:
             raise ModeleNonEntraineError()  # On ne peut pas prédire sans modèle entraîné
         X_encode = self._encoder_donnees(X)  # Même encodage qu'à l'entraînement
         return self._modele.predict(X_encode).tolist()  # Retourne une liste Python de 0 et 1
-
+    def predire_probabilite(self, X: pd.DataFrame) -> float:
+        """Retourne la probabilité de réclamation en pourcentage (0 à 100)."""
+        if self._modele is None:
+            raise ModeleNonEntraineError()  # On ne peut pas prédire sans modèle entraîné
+        X_encode = self._encoder_donnees(X)              # Même encodage qu'à l'entraînement
+        proba = self._modele.predict_proba(X_encode)[0]  # [proba_classe_0, proba_classe_1]
+        return round(proba[1] * 100, 1)                  # % de probabilité de réclamation
+    
     def sauvegarder(self, chemin: str) -> None:
         """Sauvegarde le modèle dans un fichier pour ne pas réentraîner à chaque fois."""
         joblib.dump(self._modele, chemin)  # Écrit le modèle sur disque
