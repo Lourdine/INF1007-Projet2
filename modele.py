@@ -1,3 +1,4 @@
+
 """
 modele.py — Entraînement et prédiction du modèle ML pour INF1007 Projet 2.
 Sujet : Prédiction de réclamation d'assurance auto (classification binaire).
@@ -39,7 +40,18 @@ class Modele:
         self._modele = RandomForestClassifier(n_estimators=100, random_state=42)
         self._modele.fit(X_train, y_train)  # Le modèle apprend le lien entre X et y
         predictions = self._modele.predict(X_test)  # Teste sur les 20% mis de côté
-        return accuracy_score(y_test, predictions)  # % de bonnes prédictions
+        accuracy = accuracy_score(y_test, predictions)  # % de bonnes prédictions
+
+        # Modèle trivial — prédit toujours la classe majoritaire (point de comparaison)
+        import numpy as np
+        classe_majoritaire = np.bincount(y_test).argmax()
+        predictions_triviales = [classe_majoritaire] * len(y_test)
+        accuracy_trivial = accuracy_score(y_test, predictions_triviales)
+        print(f"Modèle trivial     — précision : {accuracy_trivial:.2%}")
+        print(f"Modèle RandomForest — précision : {accuracy:.2%}")
+        print(f"Gain par rapport au trivial : +{(accuracy - accuracy_trivial):.2%}")
+
+        return accuracy
 
     def predire(self, X: pd.DataFrame) -> list:
         """Prédit 0 (pas de réclamation) ou 1 (réclamation) pour chaque ligne de X."""
