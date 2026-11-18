@@ -103,3 +103,18 @@ class Modele:
     def charger(self, chemin: str) -> None:
         """Recharge un modèle sauvegardé depuis un fichier."""
         self._modele = joblib.load(chemin)  # Remet le modèle en mémoire
+
+
+
+
+    def __str__(self) -> str:
+        """Représentation lisible du modèle — affiche son état et le nombre d'arbres."""
+        if self._modele is None:
+            return "Modele(non entraîné)"
+        n_arbres = self._modele.n_estimators
+        return f"Modele(RandomForest, {n_arbres} arbres, entraîné)"
+
+    def __repr__(self) -> str:
+        """Représentation technique pour le débogage."""
+        entraine = self._modele is not None
+        return f"Modele(entraine={entraine})"
