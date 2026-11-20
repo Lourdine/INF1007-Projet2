@@ -83,7 +83,16 @@ class Interface:
         self._modele.sauvegarder(CHEMIN_MODELE)        # Sauvegarde le modèle sur disque (.pkl)
         self._modele.sauvegarder_metadonnees(X, precision, "modeles/metadonnees.json")  # Sauvegarde les métadonnées du modèle en JSON
         print(f"Modèle entraîné — précision : {precision:.2%}")  # Affiche ex: "précision : 85.00%"
-
+        # Ch. 13 — Graphique d'exploration : distribution de OUTCOME (0 = pas de réclamation, 1 = réclamation)
+        fig_exp, ax_exp = plt.subplots(figsize=(6, 4))         # Crée une nouvelle figure
+        counts = df["OUTCOME"].value_counts().sort_index()     # Compte les 0 et les 1 dans le dataset
+        ax_exp.bar(["Pas de réclamation (0)", "Réclamation (1)"], counts.values,
+           color=["#10b981", "#ef4444"])               # Vert = pas de réclamation, rouge = réclamation
+        ax_exp.set_title("Distribution des réclamations dans le dataset")
+        ax_exp.set_ylabel("Nombre de conducteurs")
+        fig_exp.tight_layout()
+        fig_exp.savefig("graphique_exploration.png", dpi=150, bbox_inches="tight")  # Sauvegarde sur disque
+        plt.close(fig_exp)                                     # Libère la mémoire
     # ── Style ttk ─────────────────────────────────────────────────────────────
 
     def _appliquer_style_ttk(self):
@@ -302,7 +311,8 @@ class Interface:
         """
         Lit toutes les valeurs saisies dans les champs et les valide.
         Retourne un dictionnaire {nom_variable: valeur}.
-        Lève DonneeInvalideError si un champ est vide ou contient un non-nombre.
+        Lève DonneeInvalideError si un champ est vide, contient un non-nombre,
+        ou contient une valeur hors de l'intervalle attendu.
         """
         # Placeholders à ignorer : si l'utilisateur n'a pas touché au champ, ce texte est encore là
         PLACEHOLDERS = {
@@ -312,6 +322,17 @@ class Interface:
             "PAST_ACCIDENTS":      "ex: 0",
             "DUIS":                "ex: 0",
         }
+
+        # Intervalles valides pour chaque champ numérique (min inclus, max inclus)
+        # Basés sur les valeurs réelles du dataset Car_Insurance_Claim.csv
+        INTERVALLES = {
+            "CREDIT_SCORE":        (0.0,  1.0),        # Score normalisé entre 0 et 1
+            "ANNUAL_MILEAGE":      (0.0,  100000.0),   # Kilométrage annuel réaliste
+            "SPEEDING_VIOLATIONS": (0.0,  20.0),        # Nombre d'infractions de vitesse
+            "PAST_ACCIDENTS":      (0.0,  15.0),        # Nombre d'accidents passés
+            "DUIS":                (0.0,  10.0),        # Conduite en état d'ivresse
+        }
+
         valeurs = {}
         champs_numeriques = [                          # Ces variables doivent être des nombres
             "CREDIT_SCORE", "ANNUAL_MILEAGE",
@@ -327,9 +348,19 @@ class Interface:
 
             if nom in champs_numeriques:
                 try:
-                    valeurs[nom] = float(valeur)       # Convertit en nombre décimal
+                    nombre = float(valeur)             # Convertit en nombre décimal
                 except ValueError:
                     raise DonneeInvalideError(f"'{nom}' doit être un nombre, pas '{valeur}'.")
+
+                # Validation de l'intervalle — rejette les valeurs hors limites
+                min_val, max_val = INTERVALLES[nom]
+                if nombre < min_val or nombre > max_val:
+                    raise DonneeInvalideError(
+                        f"'{nom}' doit être entre {min_val} et {max_val}.\n"
+                        f"Valeur saisie : {nombre}"
+                    )
+
+                valeurs[nom] = nombre                  # Valeur numérique validée
             else:
                 valeurs[nom] = valeur                  # Valeur texte pour les menus
 
@@ -386,6 +417,9 @@ class Interface:
 
         colonnes = ["AGE", "GENDER", "DRIVING_EXPERIENCE", "CREDIT_SCORE", "VEHICLE_YEAR", "MARRIED", "VEHICLE_OWNERSHIP", "ANNUAL_MILEAGE", "SPEEDING_VIOLATIONS", "PAST_ACCIDENTS", "DUIS", "VEHICLE_TYPE"]  # Noms des 12 variables d'entrée (fixes)
         importances = self._modele._modele.feature_importances_  # Tableau calculé par RandomForest
+        indices = sorted(range(len(importances)), key=lambda i: importances[i])  # Tri croissant par importance
+        colonnes = [colonnes[i] for i in indices]        # Réordonne les noms selon le tri
+        importances = [importances[i] for i in indices]  # Réordonne les valeurs selon le tri
 
         # Création du graphique avec le thème navy
         fig, ax = plt.subplots(figsize=(5, 4.5))
@@ -400,7 +434,8 @@ class Interface:
         ax.spines[:].set_color(NAVY_BORDER)            # Bordures du graphique en gris foncé
         ax.set_xlabel("Importance (RandomForest)", fontsize=8, color=TEXTE_MUT)
         fig.tight_layout(pad=1.5)
-
+        fig.savefig("graphique_importance.png", dpi=150, bbox_inches="tight",
+            facecolor=NAVY_PANEL)                       # Sauvegarde le graphique sur disque (Ch. 13)
         # Intègre le graphique matplotlib dans Tkinter et garde la référence
         self._canvas_graphique = FigureCanvasTkAgg(fig, master=self._colonne_droite)
         self._canvas_graphique.draw()
