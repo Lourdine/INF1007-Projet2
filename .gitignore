@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Fichiers générés par l'application
+historique.csv
+modele_sauvegarde.pkl
+graphique_exploration.png
+graphique_importance.png
+modeles/
